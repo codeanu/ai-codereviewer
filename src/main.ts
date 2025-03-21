@@ -171,10 +171,28 @@ function createComment(
     if (!file.to) {
       return [];
     }
+    
+    // Convert AI provided line number to a number
+    const lineNumber = Number(aiResponse.lineNumber);
+    
+    // Check if the line number is actually in the diff
+    const isLineInDiff = chunk.changes.some(change => 
+      // For new lines (addition)
+      (change.type === 'add' && change.ln === lineNumber) || 
+      // For context and deleted lines
+      (change.ln2 === lineNumber)
+    );
+    
+    // Only return comments for lines that are in the diff
+    if (!isLineInDiff) {
+      console.log(`Skipping comment for ${file.to}:${lineNumber} as it's not part of the diff`);
+      return [];
+    }
+    
     return {
       body: aiResponse.reviewComment,
       path: file.to,
-      line: Number(aiResponse.lineNumber),
+      line: lineNumber,
     };
   });
 }
